@@ -1,1 +1,4 @@
-
+com:
+  demo:
+    uploads:
+      directory: ./files
