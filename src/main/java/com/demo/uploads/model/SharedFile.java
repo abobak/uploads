@@ -20,6 +20,9 @@ public class SharedFile {
     @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 
+    @Column(unique = true)
+    private String identifier;
+
     private String localPath;
 
     private String name;

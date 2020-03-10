@@ -1,5 +1,6 @@
 package com.demo.uploads.controller;
 
+import com.demo.uploads.repository.UserRepository;
 import com.demo.uploads.security.RestApiSecurityConfig;
 import com.demo.uploads.security.UploadAppAuthenticationProvider;
 import com.demo.uploads.service.UserService;
@@ -35,6 +36,9 @@ class UserManagementControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private UserRepository userRepository;
 
     @Test
     void shouldReturn201ForValidInput() throws Exception {
