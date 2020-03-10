@@ -3,9 +3,8 @@ package com.demo.uploads.controller;
 import com.demo.uploads.repository.UserRepository;
 import com.demo.uploads.security.RestApiSecurityConfig;
 import com.demo.uploads.security.UploadAppAuthenticationProvider;
-import com.demo.uploads.service.UserService;
+import com.demo.uploads.service.UsersService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,10 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -35,7 +31,7 @@ class UserManagementControllerTest {
     private MockMvc mvc;
 
     @MockBean
-    private UserService userService;
+    private UsersService usersService;
 
     @MockBean
     private UserRepository userRepository;

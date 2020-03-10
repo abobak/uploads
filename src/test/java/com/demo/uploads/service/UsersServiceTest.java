@@ -12,10 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-class UserServiceTest {
+class UsersServiceTest {
 
     @Autowired
-    private UserService userService;
+    private UsersService usersService;
 
     @Test
     void shouldPersistUserFromDto() {
@@ -25,10 +25,10 @@ class UserServiceTest {
         NewUserDto dto = new NewUserDto(expectedEmail, expectedPassword);
 
         // when
-        userService.createUser(dto);
+        usersService.createUser(dto);
 
         // then
-        User u = userService.loadUserByUsername(expectedEmail);
+        User u = usersService.loadUserByUsername(expectedEmail);
         assertEquals(expectedEmail, u.getUsername());
         assertEquals(expectedPassword, u.getPassword());
     }

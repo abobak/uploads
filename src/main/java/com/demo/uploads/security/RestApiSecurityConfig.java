@@ -1,6 +1,6 @@
 package com.demo.uploads.security;
 
-import com.demo.uploads.service.UserService;
+import com.demo.uploads.service.UsersService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -15,11 +15,11 @@ public class RestApiSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UploadAppAuthenticationProvider uploadAppAuthenticationProvider;
 
-    private final UserService userService;
+    private final UsersService usersService;
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(uploadAppAuthenticationProvider).userDetailsService(userService);
+        auth.authenticationProvider(uploadAppAuthenticationProvider).userDetailsService(usersService);
     }
 
     @Override

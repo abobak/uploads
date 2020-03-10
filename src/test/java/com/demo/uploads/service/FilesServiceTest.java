@@ -1,5 +1,6 @@
 package com.demo.uploads.service;
 
+import com.demo.uploads.exception.AccessDeniedException;
 import com.demo.uploads.exception.BadRequestException;
 import com.demo.uploads.model.SharedFile;
 import com.demo.uploads.model.User;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(SpringExtension.class)
 @Transactional
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class FileServiceTest {
+class FilesServiceTest {
 
     private MultipartFile d1 = new MockMultipartFile("file1ThatDoesNotExists.txt",
             "file1ThatDoesNotExists.txt",
@@ -44,7 +46,7 @@ class FileServiceTest {
     private SharedFileRepository sharedFileRepository;
 
     @Autowired
-    private FileService fileService;
+    private FilesService filesService;
 
     private Long userId;
 
@@ -62,14 +64,14 @@ class FileServiceTest {
 
     @AfterAll
     void tearDown() throws IOException {
-        Path target = fileService.getFileStorageLocation();
+        Path target = filesService.getFileStorageLocation();
         FileUtils.deleteDirectory(target.toFile());
     }
 
     @Test
     void shouldAddFileToUser_whenUserUploadsFile() {
         // when
-        fileService.createShareableFile(d1, u);
+        filesService.createShareableFile(d1, u);
         // then
         u = userRepository.findWithMyFiles(userId);
         assertEquals(1, u.getMyFiles().size());
@@ -78,7 +80,7 @@ class FileServiceTest {
     @Test
     void shouldPersistFileToDisk_whenUserUploadsFile() {
         // given
-        String identifier = fileService.createShareableFile(d1, u);
+        String identifier = filesService.createShareableFile(d1, u);
         // when
         SharedFile sf = sharedFileRepository.findByIdentifier(identifier).orElseThrow(() -> new RuntimeException("Test in error"));
         String location = sf.getLocalPath();
@@ -96,9 +98,9 @@ class FileServiceTest {
         u1.setMyFiles(new ArrayList<>());
         u1.setSharedWithMe(new ArrayList<>());
         u1 = userRepository.save(u1);
-        String identifier = fileService.createShareableFile(d1, u);
+        String identifier = filesService.createShareableFile(d1, u);
         // when
-        fileService.shareWithOtherUser(identifier, u1.getEmail(), u);
+        filesService.shareWithOtherUser(identifier, u1.getEmail(), u);
         u1 = userRepository.findWithFilesSharedWithMe(u1.getId());
         SharedFile sf = sharedFileRepository.findByIdentifier(identifier).orElseThrow(() -> new RuntimeException("Test data corrupted"));
         // then
@@ -115,10 +117,35 @@ class FileServiceTest {
         u1.setMyFiles(new ArrayList<>());
         u1.setSharedWithMe(new ArrayList<>());
         u1 = userRepository.save(u1);
-        String identifier = fileService.createShareableFile(d1, u);
+        String identifier = filesService.createShareableFile(d1, u);
         // when & then
         User notAllowedToShare = u1;
-        assertThrows(BadRequestException.class, () -> fileService.shareWithOtherUser(identifier, u.getEmail(), notAllowedToShare));
+        assertThrows(BadRequestException.class, () -> filesService.shareWithOtherUser(identifier, u.getEmail(), notAllowedToShare));
+    }
+
+    @Test
+    void shouldExposeResourceWhenValidUserWantsToAccessFile() {
+        // given
+        String id = filesService.createShareableFile(d1, u);
+        // when
+        Resource r = filesService.getFileContent(id, u);
+        // then
+        assertTrue(r.exists());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenInvalidUserWantsToAccessFile() {
+        // given
+        String id = filesService.createShareableFile(d1, u);
+        User u1 = new User();
+        u1.setEmail("share_with_me@domain.com");
+        u1.setPassword("plaintext");
+        u1.setMyFiles(new ArrayList<>());
+        u1.setSharedWithMe(new ArrayList<>());
+        u1 = userRepository.save(u1);
+        // when & then
+        User userWithNoAccessToFile = u1;
+        assertThrows(AccessDeniedException.class, () -> filesService.getFileContent(id, userWithNoAccessToFile));
     }
 
 }
