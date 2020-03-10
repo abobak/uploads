@@ -1,6 +1,7 @@
 package com.demo.uploads.service;
 
 import com.demo.uploads.configuration.FileStorageConfiguration;
+import com.demo.uploads.exception.AccessDeniedException;
 import com.demo.uploads.exception.BadRequestException;
 import com.demo.uploads.exception.FileStorageException;
 import com.demo.uploads.exception.NotFoundException;
@@ -11,12 +12,16 @@ import com.demo.uploads.repository.UserRepository;
 import lombok.Getter;
 import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +30,7 @@ import java.util.Optional;
 import java.util.Random;
 
 @Service
-public class FileService {
+public class FilesService {
 
     @Getter
     private final Path fileStorageLocation;
@@ -37,9 +42,9 @@ public class FileService {
     private final Object newShareableFileLock = new Object();
 
     @Autowired
-    public FileService(FileStorageConfiguration fileStorageConfiguration,
-                       SharedFileRepository sharedFileRepository,
-                       UserRepository userRepository) throws FileStorageException {
+    public FilesService(FileStorageConfiguration fileStorageConfiguration,
+                        SharedFileRepository sharedFileRepository,
+                        UserRepository userRepository) throws FileStorageException {
 
         this.fileStorageLocation = Paths.get(fileStorageConfiguration.getUploadDir())
                 .toAbsolutePath().normalize();
@@ -117,5 +122,24 @@ public class FileService {
         sf.getSharedWith().add(userWhoMightAccessFile);
         userRepository.save(userWhoMightAccessFile);
         sharedFileRepository.save(sf);
+    }
+
+    public Resource getFileContent(String identifier, User user) {
+        SharedFile sf = sharedFileRepository.findByIdentifier(identifier).orElseThrow(() -> new NotFoundException("No file with identifier " + identifier));
+        if (!user.getSharedWithMe().contains(sf) && ! user.getMyFiles().contains(sf)) {
+            throw new AccessDeniedException("You can't download a file you don't own or have access to");
+        }
+        Path path = Paths.get(sf.getLocalPath());
+        Resource resource;
+        try {
+            resource = new UrlResource(path.toUri());
+        } catch (MalformedURLException e) {
+            throw new FileStorageException("Local path of file corrupt. Check local path of document with id " + sf.getLocalPath());
+        }
+        if (resource.exists()) {
+            return resource;
+        } else {
+            throw new FileStorageException("File not found " + sf.getIdentifier());
+        }
     }
 }
