@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -31,6 +32,6 @@ public class SharedFile {
     private User owner;
 
     @OneToMany
-    private List<User> sharedWith;
+    private List<User> sharedWith = new ArrayList<>();
 
 }

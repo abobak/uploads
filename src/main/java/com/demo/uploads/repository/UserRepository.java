@@ -20,4 +20,9 @@ public interface UserRepository extends JpaRepository<User, Long>, CrudRepositor
             "left join fetch user.myFiles mf " +
             "where user.id = :id")
     User findWithMyFiles(@Param("id") Long id);
+
+    @Query("select user from User user " +
+            "left join fetch user.sharedWithMe swm " +
+            "where user.id = :id")
+    User findWithFilesSharedWithMe(@Param("id") Long id);
 }

@@ -1,7 +1,9 @@
 package com.demo.uploads.service;
 
 import com.demo.uploads.configuration.FileStorageConfiguration;
+import com.demo.uploads.exception.BadRequestException;
 import com.demo.uploads.exception.FileStorageException;
+import com.demo.uploads.exception.NotFoundException;
 import com.demo.uploads.model.SharedFile;
 import com.demo.uploads.model.User;
 import com.demo.uploads.repository.SharedFileRepository;
@@ -104,4 +106,16 @@ public class FileService {
                 .toString();
     }
 
+    @Transactional
+    public void shareWithOtherUser(String shareIdentifier, String sharedWithEmail, User currentUser) {
+        SharedFile sf = sharedFileRepository.findByIdentifier(shareIdentifier).orElseThrow(() -> new NotFoundException("No file with identifier " + shareIdentifier));
+        if (!currentUser.equals(sf.getOwner())) {
+            throw new BadRequestException("You can't share file you don't own!");
+        }
+        User userWhoMightAccessFile = userRepository.findUserByEmail(sharedWithEmail);
+        userWhoMightAccessFile.getSharedWithMe().add(sf);
+        sf.getSharedWith().add(userWhoMightAccessFile);
+        userRepository.save(userWhoMightAccessFile);
+        sharedFileRepository.save(sf);
+    }
 }
