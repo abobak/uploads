@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -28,10 +29,10 @@ public class User implements UserDetails {
     private String password;
 
     @OneToMany(mappedBy = "owner")
-    private List<SharedFile> myFiles;
+    private List<SharedFile> myFiles = new ArrayList<>();
 
     @OneToMany(mappedBy = "sharedWith")
-    private List<SharedFile> sharedWithMe;
+    private List<SharedFile> sharedWithMe = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
