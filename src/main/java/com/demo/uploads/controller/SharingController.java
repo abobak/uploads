@@ -2,10 +2,13 @@ package com.demo.uploads.controller;
 
 import com.demo.uploads.api.SharingApi;
 import com.demo.uploads.dto.FileShareDto;
+import com.demo.uploads.dto.FileSharesDto;
 import com.demo.uploads.model.User;
 import com.demo.uploads.security.UserSecurityHelper;
 import com.demo.uploads.service.FilesService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,5 +24,11 @@ public class SharingController implements SharingApi {
     public void share(FileShareDto dto) {
         User currentUser = userSecurityHelper.getCurrentUser();
         filesService.shareWithOtherUser(dto.getShareIdentifier(), dto.getSharedWith(), currentUser);
+    }
+
+    @GetMapping("/api/file/{fileIdentifier}")
+    public FileSharesDto showAvailableShares(@PathVariable String fileIdentifier) {
+        User currentUser = userSecurityHelper.getCurrentUser();
+        return filesService.getMyFiles(fileIdentifier, currentUser);
     }
 }

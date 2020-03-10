@@ -1,6 +1,7 @@
 package com.demo.uploads.service;
 
 import com.demo.uploads.configuration.FileStorageConfiguration;
+import com.demo.uploads.dto.FileSharesDto;
 import com.demo.uploads.exception.AccessDeniedException;
 import com.demo.uploads.exception.BadRequestException;
 import com.demo.uploads.exception.FileStorageException;
@@ -14,7 +15,6 @@ import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -141,5 +141,9 @@ public class FilesService {
         } else {
             throw new FileStorageException("File not found " + sf.getIdentifier());
         }
+    }
+
+    public FileSharesDto getMyFiles(String fileIdentifier, User currentUser) {
+        return null;
     }
 }
