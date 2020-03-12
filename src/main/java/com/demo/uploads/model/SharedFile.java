@@ -7,7 +7,9 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @AllArgsConstructor
@@ -32,6 +34,6 @@ public class SharedFile {
     private User owner;
 
     @ManyToMany
-    private List<User> sharedWith = new ArrayList<>();
+    private Set<User> sharedWith = new HashSet<>();
 
 }
