@@ -146,6 +146,19 @@ class FilesServiceTest {
     }
 
     @Test
+    void shouldBeAbleToUploadTheSameFileTwice() {
+        // given
+        String id1 = filesService.createShareableFile(d1, u);
+        String id2 = filesService.createShareableFile(d1, u);
+        // when
+        Resource r1 = filesService.getFileContent(id1, u);
+        Resource r2 = filesService.getFileContent(id2, u);
+        // then
+        assertTrue(r1.exists());
+        assertTrue(r2.exists());
+    }
+
+    @Test
     void shouldThrowExceptionWhenInvalidUserWantsToAccessFile() {
         // given
         String id = filesService.createShareableFile(d1, u);
