@@ -1,11 +1,11 @@
 package com.demo.uploads.api;
 
-import com.demo.uploads.dto.FileShareDto;
+import com.demo.uploads.dto.SharePayload;
 import com.demo.uploads.dto.FileSharesDto;
 
 public interface SharingApi {
 
-    void share(FileShareDto dto);
+    void share(SharePayload dto);
 
-    FileSharesDto showAvailableShares(String fileIdentifier);
+    FileSharesDto showAvailableShares();
 }

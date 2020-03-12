@@ -28,10 +28,10 @@ public class SharedFile {
 
     private String name;
 
-    @OneToOne
+    @ManyToOne
     private User owner;
 
-    @OneToMany
+    @ManyToMany
     private List<User> sharedWith = new ArrayList<>();
 
 }

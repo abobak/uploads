@@ -31,7 +31,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "owner")
     private List<SharedFile> myFiles = new ArrayList<>();
 
-    @OneToMany(mappedBy = "sharedWith")
+    @ManyToMany
     private List<SharedFile> sharedWithMe = new ArrayList<>();
 
     @Override

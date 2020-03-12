@@ -6,6 +6,7 @@ import com.demo.uploads.exception.AccessDeniedException;
 import com.demo.uploads.exception.BadRequestException;
 import com.demo.uploads.exception.FileStorageException;
 import com.demo.uploads.exception.NotFoundException;
+import com.demo.uploads.mapper.FileShareMapper;
 import com.demo.uploads.model.SharedFile;
 import com.demo.uploads.model.User;
 import com.demo.uploads.repository.SharedFileRepository;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -39,17 +41,21 @@ public class FilesService {
 
     private final UserRepository userRepository;
 
+    private final FileShareMapper fileShareMapper;
+
     private final Object newShareableFileLock = new Object();
 
     @Autowired
     public FilesService(FileStorageConfiguration fileStorageConfiguration,
                         SharedFileRepository sharedFileRepository,
-                        UserRepository userRepository) throws FileStorageException {
+                        UserRepository userRepository,
+                        FileShareMapper fileShareMapper) throws FileStorageException {
 
         this.fileStorageLocation = Paths.get(fileStorageConfiguration.getUploadDir())
                 .toAbsolutePath().normalize();
         this.sharedFileRepository = sharedFileRepository;
         this.userRepository = userRepository;
+        this.fileShareMapper = fileShareMapper;
 
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -143,7 +149,9 @@ public class FilesService {
         }
     }
 
-    public FileSharesDto getMyFiles(String fileIdentifier, User currentUser) {
-        return null;
+    public FileSharesDto getAvailableFiles(User currentUser) {
+        List<SharedFile> ownedFiles = sharedFileRepository.findAllByOwner(currentUser);
+        List<SharedFile> filesSharedWithUser = sharedFileRepository.findAllBySharedWithIsContaining(currentUser);
+        return new FileSharesDto(fileShareMapper.filesToDtos(ownedFiles), fileShareMapper.filesToDtos(filesSharedWithUser));
     }
 }

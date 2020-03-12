@@ -1,6 +1,9 @@
 package com.demo.uploads.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -8,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 public class FileShareDto {
 
-    private String sharedWith;
+    private String fileName;
 
     private String shareIdentifier;
 
