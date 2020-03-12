@@ -28,7 +28,16 @@ public class RestApiSecurityConfig extends WebSecurityConfigurerAdapter {
                 .cors().and()
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/register").permitAll()
+                .antMatchers(
+                        "/",
+                        "/csrf",
+                        "/register",
+                        "/swagger-ui.html",
+                        "/v2/api-docs",
+                        "/configuration/ui",
+                        "/swagger-resources/**",
+                        "/configuration/security",
+                        "/webjars/**").permitAll()
                 .anyRequest().authenticated().and()
                 .httpBasic();
     }

@@ -1,6 +1,7 @@
 package com.demo.uploads.controller;
 
 import com.demo.uploads.api.SharingApi;
+import com.demo.uploads.dto.FileShareDto;
 import com.demo.uploads.dto.SharePayload;
 import com.demo.uploads.dto.FileSharesDto;
 import com.demo.uploads.model.User;
