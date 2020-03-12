@@ -2,3 +2,7 @@ com:
   demo:
     uploads:
       directory: ./files
+
+spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
