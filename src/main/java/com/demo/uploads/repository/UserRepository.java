@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long>, CrudRepositor
 
     Optional<User> findByEmailAndPassword(String email, String password);
 
+    Optional<User> findByEmail(String email);
+
     @Query("select user from User user " +
             "left join fetch user.myFiles mf " +
             "where user.id = :id")
