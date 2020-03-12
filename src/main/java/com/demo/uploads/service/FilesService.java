@@ -1,10 +1,12 @@
 package com.demo.uploads.service;
 
 import com.demo.uploads.configuration.FileStorageConfiguration;
+import com.demo.uploads.dto.FileSharesDto;
 import com.demo.uploads.exception.AccessDeniedException;
 import com.demo.uploads.exception.BadRequestException;
 import com.demo.uploads.exception.FileStorageException;
 import com.demo.uploads.exception.NotFoundException;
+import com.demo.uploads.mapper.FileShareMapper;
 import com.demo.uploads.model.SharedFile;
 import com.demo.uploads.model.User;
 import com.demo.uploads.repository.SharedFileRepository;
@@ -14,7 +16,6 @@ import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,8 +27,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class FilesService {
@@ -39,17 +42,21 @@ public class FilesService {
 
     private final UserRepository userRepository;
 
+    private final FileShareMapper fileShareMapper;
+
     private final Object newShareableFileLock = new Object();
 
     @Autowired
     public FilesService(FileStorageConfiguration fileStorageConfiguration,
                         SharedFileRepository sharedFileRepository,
-                        UserRepository userRepository) throws FileStorageException {
+                        UserRepository userRepository,
+                        FileShareMapper fileShareMapper) throws FileStorageException {
 
         this.fileStorageLocation = Paths.get(fileStorageConfiguration.getUploadDir())
                 .toAbsolutePath().normalize();
         this.sharedFileRepository = sharedFileRepository;
         this.userRepository = userRepository;
+        this.fileShareMapper = fileShareMapper;
 
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -61,13 +68,21 @@ public class FilesService {
     private String storeFile(MultipartFile file) {
 
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String subDirectory = UUID.randomUUID().toString();
+        Path subFolder = Paths.get(this.fileStorageLocation.toString(), subDirectory);
+        try {
+            Files.createDirectories(subFolder);
+        } catch (Exception ex) {
+            throw new FileStorageException("Could not create subdirectory for uploaded file.", ex);
+        }
+
         try {
 
             if (fileName.contains("..")) {
                 throw new FileStorageException("Filename contains invalid path sequence " + fileName);
             }
 
-            Path targetLocation = this.fileStorageLocation.resolve(fileName);
+            Path targetLocation = subFolder.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
             return targetLocation.toString();
@@ -141,5 +156,11 @@ public class FilesService {
         } else {
             throw new FileStorageException("File not found " + sf.getIdentifier());
         }
+    }
+
+    public FileSharesDto getAvailableFiles(User currentUser) {
+        List<SharedFile> ownedFiles = sharedFileRepository.findAllByOwner(currentUser);
+        List<SharedFile> filesSharedWithUser = sharedFileRepository.findAllBySharedWithIsContaining(currentUser);
+        return new FileSharesDto(fileShareMapper.filesToDtos(ownedFiles), fileShareMapper.filesToDtos(filesSharedWithUser));
     }
 }

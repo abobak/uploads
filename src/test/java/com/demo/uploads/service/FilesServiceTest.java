@@ -1,7 +1,11 @@
 package com.demo.uploads.service;
 
+import com.demo.uploads.dto.FileShareDto;
+import com.demo.uploads.dto.FileSharesDto;
 import com.demo.uploads.exception.AccessDeniedException;
 import com.demo.uploads.exception.BadRequestException;
+import com.demo.uploads.exception.FileStorageException;
+import com.demo.uploads.exception.NotFoundException;
 import com.demo.uploads.model.SharedFile;
 import com.demo.uploads.model.User;
 import com.demo.uploads.repository.SharedFileRepository;
@@ -25,6 +29,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,6 +41,11 @@ class FilesServiceTest {
 
     private MultipartFile d1 = new MockMultipartFile("file1ThatDoesNotExists.txt",
             "file1ThatDoesNotExists.txt",
+            "text/plain",
+            "This is a dummy file content".getBytes(StandardCharsets.UTF_8));
+
+    private MultipartFile d2 = new MockMultipartFile("file2ThatDoesNotExists.txt",
+            "file2ThatDoesNotExists.txt",
             "text/plain",
             "This is a dummy file content".getBytes(StandardCharsets.UTF_8));
 
@@ -57,8 +67,8 @@ class FilesServiceTest {
         u = new User();
         u.setEmail("me@domain.com");
         u.setPassword("plaintext");
-        u.setMyFiles(new ArrayList<>());
-        u.setSharedWithMe(new ArrayList<>());
+        u.setMyFiles(new HashSet<>());
+        u.setSharedWithMe(new HashSet<>());
         userId = userRepository.save(u).getId();
     }
 
@@ -92,12 +102,7 @@ class FilesServiceTest {
     @Test
     void shouldAddFileToFilesSharedWithUser() {
         // given
-        User u1 = new User();
-        u1.setEmail("share_with_me@domain.com");
-        u1.setPassword("plaintext");
-        u1.setMyFiles(new ArrayList<>());
-        u1.setSharedWithMe(new ArrayList<>());
-        u1 = userRepository.save(u1);
+        User u1 = createUser();
         String identifier = filesService.createShareableFile(d1, u);
         // when
         filesService.shareWithOtherUser(identifier, u1.getEmail(), u);
@@ -109,14 +114,24 @@ class FilesServiceTest {
     }
 
     @Test
+    void shouldReturnTwoSharedFilesAndZeroOwned() {
+        // given
+        User u1 = createUser();
+        String identifier = filesService.createShareableFile(d1, u);
+        String identifier2 = filesService.createShareableFile(d2, u);
+        // when
+        filesService.shareWithOtherUser(identifier, u1.getEmail(), u);
+        filesService.shareWithOtherUser(identifier2, u1.getEmail(), u);
+        // then
+        FileSharesDto available = filesService.getAvailableFiles(u1);
+        assertEquals(0, available.getMyFiles().size());
+        assertEquals(2, available.getSharedWithMe().size());
+    }
+
+    @Test
     void shouldThrowErrorIfNonOwnerTriesToShareFile() {
         // given
-        User u1 = new User();
-        u1.setEmail("share_with_me@domain.com");
-        u1.setPassword("plaintext");
-        u1.setMyFiles(new ArrayList<>());
-        u1.setSharedWithMe(new ArrayList<>());
-        u1 = userRepository.save(u1);
+        User u1 = createUser();
         String identifier = filesService.createShareableFile(d1, u);
         // when & then
         User notAllowedToShare = u1;
@@ -134,18 +149,73 @@ class FilesServiceTest {
     }
 
     @Test
+    void shouldBeAbleToUploadTheSameFileTwiceAndStoreBothCopies() {
+        // given
+        String id1 = filesService.createShareableFile(d1, u);
+        String id2 = filesService.createShareableFile(d1, u);
+        // when
+        Resource r1 = filesService.getFileContent(id1, u);
+        Resource r2 = filesService.getFileContent(id2, u);
+        // then
+        assertTrue(r1.exists());
+        assertTrue(r2.exists());
+    }
+
+    @Test
+    void shouldBeAbleToShareTheSameFileTwice() {
+        // given
+        String id1 = filesService.createShareableFile(d1, u);
+        String id2 = filesService.createShareableFile(d1, u);
+        User u1 = createUser();
+
+        // when
+        filesService.shareWithOtherUser(id1, u1.getEmail(), u);
+        filesService.shareWithOtherUser(id2, u1.getEmail(), u);
+
+        // then
+        FileSharesDto available = filesService.getAvailableFiles(u1);
+        assertEquals(2, available.getSharedWithMe().size());
+    }
+
+    @Test
+    void whenUserSharesFileWithTheSameIdentifierTwiceItShouldBeAddedToSharedFilesOnlyOnce() {
+        // given
+        String id1 = filesService.createShareableFile(d1, u);
+        User u1 = createUser();
+
+        // when
+        filesService.shareWithOtherUser(id1, u1.getEmail(), u);
+        filesService.shareWithOtherUser(id1, u1.getEmail(), u);
+
+        // then
+        u1 = userRepository.findWithFilesSharedWithMe(u1.getId());
+        assertEquals(1, u1.getSharedWithMe().size());
+    }
+
+    @Test
     void shouldThrowExceptionWhenInvalidUserWantsToAccessFile() {
         // given
         String id = filesService.createShareableFile(d1, u);
+        User userWithNoAccessToFile = createUser();
+        // when & then
+        assertThrows(AccessDeniedException.class, () -> filesService.getFileContent(id, userWithNoAccessToFile));
+    }
+
+    @Test
+    void shouldThrowExceptionIfUserTriesToDownloadFileWithIdentifierThatDoesntExist() {
+        // when & then
+        assertThrows(NotFoundException.class, () -> filesService.getFileContent("i_dont_exist_1111!", u));
+    }
+
+    private User createUser() {
         User u1 = new User();
         u1.setEmail("share_with_me@domain.com");
         u1.setPassword("plaintext");
-        u1.setMyFiles(new ArrayList<>());
-        u1.setSharedWithMe(new ArrayList<>());
+        u1.setMyFiles(new HashSet<>());
+        u1.setSharedWithMe(new HashSet<>());
         u1 = userRepository.save(u1);
-        // when & then
-        User userWithNoAccessToFile = u1;
-        assertThrows(AccessDeniedException.class, () -> filesService.getFileContent(id, userWithNoAccessToFile));
+        return u1;
     }
+
 
 }
