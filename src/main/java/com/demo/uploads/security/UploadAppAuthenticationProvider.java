@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -24,11 +25,11 @@ public class UploadAppAuthenticationProvider implements AuthenticationProvider {
             throws AuthenticationException {
         String username = auth.getName();
         String password = auth.getCredentials().toString();
-        Optional<User> user = userRepository.findByEmailAndPassword(username, password);
-        if (user.isPresent()) {
-            return new UsernamePasswordAuthenticationToken(username, password, null);
-        } else {
+        Optional<User> user = userRepository.findByEmail(username);
+        if (!user.isPresent() || !BCrypt.checkpw(password, user.get().getPassword())) {
             throw new AccessDeniedException("Incorrect username or password");
+        } else {
+            return new UsernamePasswordAuthenticationToken(username, password, null);
         }
 
     }
