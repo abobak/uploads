@@ -1,10 +1,8 @@
 package com.demo.uploads.service;
 
-import com.demo.uploads.dto.FileShareDto;
 import com.demo.uploads.dto.FileSharesDto;
 import com.demo.uploads.exception.AccessDeniedException;
 import com.demo.uploads.exception.BadRequestException;
-import com.demo.uploads.exception.FileStorageException;
 import com.demo.uploads.exception.NotFoundException;
 import com.demo.uploads.model.SharedFile;
 import com.demo.uploads.model.User;
@@ -28,7 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
