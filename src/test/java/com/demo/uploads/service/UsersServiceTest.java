@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.transaction.Transactional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -35,7 +35,7 @@ class UsersServiceTest {
         // then
         User u = usersService.loadUserByUsername(expectedEmail);
         assertEquals(expectedEmail, u.getUsername());
-        assertEquals(expectedPassword, u.getPassword());
+        assertTrue(BCrypt.checkpw(expectedPassword, u.getPassword()));
     }
 
     @Test
